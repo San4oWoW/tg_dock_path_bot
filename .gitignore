@@ -1,0 +1,6 @@
+venv
+clients.db
+log.log
+users.txt
+block.db
+config.py
