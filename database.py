@@ -40,9 +40,7 @@ def registration(message_text: str, message_id: int) -> str:
             sql.execute(f"SELECT * FROM clients WHERE name = '{message_text}'")
             if sql.fetchone()[1] == '0':
                 if check_id_base(message_id) == False or check_id_base(message_id) == None:
-                    sql.execute(f"UPDATE clients set TelegramId = '{message_id}' where name = '{message_text}'")
-                    db.commit()
-                    return "Успешно. Введите /start для начала"
+                    return "1"
                 else:
                     return "Ошибка клиента. ID существует. Обратитесь в канал поддержки"
             else:
@@ -91,9 +89,27 @@ def admin_get():
 def generate_key():
     return random.randint(10000, 999999)
 
+def get_mail_from_db(name):
+    sql.execute(f"SELECT * FROM clients WHERE name = '{name}'")
+    return sql.fetchone()[3]
+
+def set_key_in_db(name):
+    sql.execute(f"UPDATE clients SET code = '{generate_key()}' WHERE name = '{name}'")
+    db.commit()
+
+def get_key_from_db(name):
+    sql.execute(f"SELECT * FROM clients WHERE name = '{name}'")
+    return sql.fetchone()[4]
+
+def set_id_in_db(name, tgid):
+    sql.execute(f"UPDATE clients SET TelegramId = '{tgid}' WHERE name = '{name}'")
+    db.commit()
 #print(read_file_in_mas(dirs_txt))
 # print(start_buttons_dict(dirs_txt))
 #print(registration("Аликин Александр", 807761312))
 #print(check_id_base(807761312))
 #test_reg()
 #аprint(admin_get())
+#set_key_in_db('Александр')
+
+

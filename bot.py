@@ -5,6 +5,8 @@ from aiogram import Bot
 from aiogram.contrib.middlewares.logging import LoggingMiddleware
 from aiogram.dispatcher import Dispatcher
 from aiogram.utils import executor
+
+import clients
 import database as d
 import blocks as b
 import find as f
@@ -15,10 +17,12 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram import types
 from aiogram.dispatcher.filters import Text
 
+import sent_to_post
+
 storage = MemoryStorage()
 
 API_TOKEN = c.API_TOKEN
-dirs_txt = c.DIRS_TXT
+dirs_txt = c.DIRS_TXT # you need create file with directiries and add document path to column
 
 
 class FSM(StatesGroup):
@@ -128,7 +132,7 @@ async def registration_next(message: types.Message, state : FSMContext):
 @dp.message_handler(commands="reg", state=None)
 async def registration(message: types.Message):
     if b.check_user_in_block_base(message.from_user.id) == False or b.check_user_in_block_base(message.from_user.id) == None:
-        await message.bot.send_message(message.from_user.id, "Введите данные для регистрации в формате: Фамилия Имя. По запросам/багам/предложениям просьба писать в группу https://t.me/Meridian_Help_Bot")
+        await message.bot.send_message(message.from_user.id, "Введите данные для регистрации в формате: Фамилия Имя в строке ниже. По запросам/багам/предложениям просьба писать в группу https://t.me/Meridian_Help_Bot")
         await FSM.name.set()
     else:
         await message.bot.send_message(message.from_user.id, "Вы были заблокированы, обратитесь в чат поддержки! https://t.me/Meridian_Help_Bot")
@@ -139,14 +143,37 @@ async def registration_next(message: types.Message, state : FSMContext):
     async with state.proxy() as data:
         data['name'] = message.text
         reg = d.registration(data['name'], message.from_user.id)
-        if reg == "Ошибка регистрации":
+        if reg != "1":
             b.add_user_to_block_base(message.from_user.id)
             b.set_count(message.from_user.id)
-            await message.bot.send_message(message.from_user.id, "Ошибка регистрации")
+            await message.bot.send_message(message.from_user.id, reg)
         else:
-            await message.bot.send_message(message.from_user.id, "Успешно. Введите /start для начала")
-    await state.finish()
+            await message.bot.send_message(message.from_user.id, f"На почту {d.get_mail_from_db(data['name'])} "
+                                                                 f"был отправлен код подтверждения. Отправьте его в строке ниже")
+            d.set_key_in_db(data['name'])
+            try:
+                sent_to_post.send_email(d.get_mail_from_db(data['name']),
+                                              "Пароль для авторизации в боте",
+                                              d.get_key_from_db(data['name']))
+                await FSM.key.set()
+            except:
+                await message.bot.send_message(message.from_user.id, "Ошибка отправки. По запросам/багам/предложениям просьба писать в группу https://t.me/Meridian_Help_Bot")
 
+
+
+@dp.message_handler(state=FSM.key)
+async def registration_end(message: types.Message, state : FSMContext):
+    async with state.proxy() as data:
+        data['key'] = message.text
+        if data['key'] == d.get_key_from_db(data['name']):
+            d.set_id_in_db(data['name'], f'{message.from_user.id}')
+            await message.bot.send_message(message.from_user.id, "Успешно. Введите /start для начала. "
+                                                                 "Для поиска документов вы можете воспользоваться командой /find")
+        else:
+            await message.bot.send_message(message.from_user.id, "Введен неправльный код. Попробуйте еще раз. Введите команду /start")
+            b.add_user_to_block_base(message.from_user.id)
+            b.set_count(message.from_user.id)
+        await state.finish()
 
 @dp.message_handler(commands="myid")
 async def get_id(message: types.Message):

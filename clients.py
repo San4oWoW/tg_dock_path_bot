@@ -7,9 +7,10 @@ sql = db.cursor()
 sql.execute("""CREATE TABLE IF NOT EXISTS clients (
         name TEXT,
         TelegramId TEXT,
-        path TEXT
+        path TEXT,
+        email TEXT,
+        code TEXT
         )""")
-
 
 db.commit()
 
@@ -20,12 +21,12 @@ def fill_clients_from_file():
     mas = file.readlines()
     mas2 = []
     for i in mas:
-        sql.execute(f"INSERT INTO clients VALUES (?,?,?)", (f"{i[:-1]}", '0', '0'))
+        sql.execute(f"INSERT INTO clients VALUES (?,?,?,?,?)", (f"{i[:-1]}", '0', '0', '0', '0'))
 
     db.commit()
 
-def add_client(name, id):
-    sql.execute(f"INSERT INTO clients VALUES (?,?,?)", (f"{name}", f'{id}', '0'))
+def add_client(name, id, mail):
+    sql.execute(f"INSERT INTO clients VALUES (?,?,?,?,?)", (f"{name}", f'{id}', '0', f'{mail}', '0'))
     db.commit()
 
 def get_client_list():
@@ -46,6 +47,9 @@ def delete_all():
     else:
         print("Ошибка")
 
-#fill_clients_from_file()
 
+
+
+#fill_clients_from_file()
 get_all_client_list()
+#get_all_client_list()

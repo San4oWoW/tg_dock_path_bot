@@ -12,9 +12,7 @@ from email.mime.audio import MIMEAudio                      # Аудио
 from email.mime.multipart import MIMEMultipart              # Многокомпонентный объект
 import gspread
 
-gc = gspread.service_account(filename=os.path.abspath("credentials.json"))
-sh = gc.open_by_key("1eHOQcO2Wr6GDohcv9BuogsJequ0M6v1M9eaUI0ys59c")
-worksheet = sh.sheet1
+
 
 def send_email_with_file(addr_to, msg_subj, msg_text, files):
     addr_from = "helpme.meridian@gmail.com"                         # Отправитель
