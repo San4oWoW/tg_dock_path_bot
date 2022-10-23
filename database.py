@@ -42,11 +42,11 @@ def registration(message_text: str, message_id: int) -> str:
                 if check_id_base(message_id) == False or check_id_base(message_id) == None:
                     return "1"
                 else:
-                    return "Ошибка клиента. ID существует. Обратитесь в канал поддержки"
+                    return "Ошибка клиент существует. Обратитесь в канал поддержки"
             else:
-                return "Ошибка клиента. ID существует. Обратитесь в канал поддержки"
+                return "Ошибка клиент существует. Обратитесь в канал поддержки"
         else:
-            return "Ошибка регистрации"
+            return "Ошибка регистрации. По запросам/багам/предложениям просьба писать в группу https://t.me/Meridian_Help_Bot"
 
     except:
         return "Ошибка"
@@ -103,6 +103,10 @@ def get_key_from_db(name):
 
 def set_id_in_db(name, tgid):
     sql.execute(f"UPDATE clients SET TelegramId = '{tgid}' WHERE name = '{name}'")
+    db.commit()
+
+def add_client(name, mail):
+    sql.execute(f"INSERT INTO clients VALUES (?,?,?,?,?)", (f"{name}", '0', '0', f'{mail}', '0'))
     db.commit()
 #print(read_file_in_mas(dirs_txt))
 # print(start_buttons_dict(dirs_txt))

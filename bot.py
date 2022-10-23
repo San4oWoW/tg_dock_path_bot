@@ -32,6 +32,7 @@ class FSM(StatesGroup):
 
 class FSM1(StatesGroup):
     admin_request = State()
+    admin_request_mail = State()
 
 
 class FSM2(StatesGroup):
@@ -121,13 +122,17 @@ async def admin(message: types.Message):
 async def registration_next(message: types.Message, state : FSMContext):
     async with state.proxy() as data:
         data['admin_request'] = message.text
-        db = sqlite3.connect('clients.db')
-        sql = db.cursor()
-        sql.execute(f"INSERT INTO clients VALUES (?,?,?)", (f"{data['admin_request']}", '0', '0'))
-        db.commit()
-        await message.bot.send_message(message.from_user.id, "Клиент добавлен")
-    await state.finish()
+        await message.bot.send_message(message.from_user.id, "Введите почту клиента(если регистрация без почты введите empty):")
+        await FSM1.admin_request_mail.set()
 
+
+@dp.message_handler(state=FSM1.admin_request_mail)
+async def registration_next(message: types.Message, state : FSMContext):
+    async with state.proxy() as data:
+        data['admin_request_mail'] = message.text
+        d.add_client(data['admin_request'], data['admin_request_mail'])
+        await message.bot.send_message(message.from_user.id, "Клиент добавлен")
+        await state.finish()
 
 @dp.message_handler(commands="reg", state=None)
 async def registration(message: types.Message):
@@ -147,18 +152,26 @@ async def registration_next(message: types.Message, state : FSMContext):
             b.add_user_to_block_base(message.from_user.id)
             b.set_count(message.from_user.id)
             await message.bot.send_message(message.from_user.id, reg)
+            await state.finish()
         else:
-            await message.bot.send_message(message.from_user.id, f"На почту {d.get_mail_from_db(data['name'])} "
-                                                                 f"был отправлен код подтверждения. Отправьте его в строке ниже")
-            d.set_key_in_db(data['name'])
-            try:
-                sent_to_post.send_email(d.get_mail_from_db(data['name']),
-                                              "Пароль для авторизации в боте",
-                                              d.get_key_from_db(data['name']))
-                await FSM.key.set()
-            except:
-                await message.bot.send_message(message.from_user.id, "Ошибка отправки. По запросам/багам/предложениям просьба писать в группу https://t.me/Meridian_Help_Bot")
 
+            if d.get_mail_from_db(data['name']) == "empty":
+                d.set_id_in_db(data['name'], f'{message.from_user.id}')
+                await message.bot.send_message(message.from_user.id, "Успешно. Введите /start для начала. "
+                                                                     "Для поиска документов вы можете воспользоваться командой /find")
+                await state.finish()
+            else:
+                await message.bot.send_message(message.from_user.id, f"На почту {d.get_mail_from_db(data['name'])} "
+                                                                     f"был отправлен код подтверждения. Отправьте его в строке ниже")
+                d.set_key_in_db(data['name'])
+                try:
+                    sent_to_post.send_email(d.get_mail_from_db(data['name']),
+                                                  "Пароль для авторизации в боте",
+                                                  d.get_key_from_db(data['name']))
+                    await FSM.key.set()
+                except:
+                    await message.bot.send_message(message.from_user.id, "Ошибка отправки. По запросам/багам/предложениям просьба писать в группу https://t.me/Meridian_Help_Bot")
+                    await state.finish()
 
 
 @dp.message_handler(state=FSM.key)

@@ -19,15 +19,21 @@ def fill_clients_from_file():
     file = open("users.txt", 'r', encoding='utf-8')
 
     mas = file.readlines()
-    mas2 = []
+    mas_new = []
+    mas_end = []
     for i in mas:
-        sql.execute(f"INSERT INTO clients VALUES (?,?,?,?,?)", (f"{i[:-1]}", '0', '0', '0', '0'))
+        mas_new.append(i[0:-1])
+    # for i in mas:
+    #     sql.execute(f"INSERT INTO clients VALUES (?,?,?,?,?)", (f"{i[:-1]}", '0', '0', '0', '0'))
+    for i in mas_new:
+        mas_end.append(i.split(" "))
 
-    db.commit()
+    for i in mas_end:
+        sql.execute(f"INSERT INTO clients VALUES (?,?,?,?,?)", (f"{i[0]} {i[1]}", f'{i[3]}', '0', f'{i[2]}', '0'))
+        db.commit()
 
-def add_client(name, id, mail):
-    sql.execute(f"INSERT INTO clients VALUES (?,?,?,?,?)", (f"{name}", f'{id}', '0', f'{mail}', '0'))
-    db.commit()
+
+
 
 def get_client_list():
     for values in sql.execute("SELECT * FROM clients WHERE TelegramId != '0'"):
@@ -49,7 +55,7 @@ def delete_all():
 
 
 
-
+#delete_all()
 #fill_clients_from_file()
 get_all_client_list()
 #get_all_client_list()
